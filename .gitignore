@@ -1,0 +1,12 @@
+# Licensed Cap IQ data, and outputs built from it: never upload
+data/
+output/
+*.xls
+*.xlsx
+
+# except the made-up sample file
+!sample_data/*.xlsx
+
+# python and editor files
+__pycache__/
+.vscode/
