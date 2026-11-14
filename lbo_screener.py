@@ -61,7 +61,7 @@ A = { # lbo assumptions.
     "max_debt_pct": 0.60, # debt can never exceed 60% of total cost.
     "rate": 0.08, # 8% interest on debt. placeholder.
     "tax": 0.25, # 25% tax rate - uk corporate tax rate.
-    "years": 5, # 5yr holding period. matches 5-7yr mandate given.
+    "years": 5, # 5 year holding period, typical for a buyout.
 }
 
 WEIGHTS = {"irr": 0.45, "equity_pct": 0.15, "margin_std": 0.15, "cash_conv": 0.15, "fcf_to_debt": 0.10} # weights for each metric in the scoring system. Must sum to 1.0.
@@ -123,7 +123,7 @@ def find_col(df, start):
     for col in df.columns:
         if col.startswith(start):
             return col
-    raise KeyError("No column starts with: " + start) # return the full cap IQ header that begins with start. Return an error code if none does.
+    raise KeyError("No column starts with: " + start) # if no header starts with this text, stop the script with an error naming the missing column.
 
 def clean(df):
     d = pd.DataFrame()
@@ -175,7 +175,7 @@ def add_metrics(d): # defines and adds the following metrics for each company.
     d["cash_conv"] = (d["ebitda"] - d["capex"]) / d["ebitda"] # share of EBITDA left after capital expenditure - this is the cash that will repay LBO debt.
     d["net_lev"] = d["net_debt_xl"] / d["ebitda"]
 
-    enough = d[MARGINS].count(axis=1) >= 3 # gives the five yearly margin columns, counting how many have data.
+    enough = d[MARGINS].count(axis=1) >= 3 # enough is defined as true where at least 3 of the 5 yearly margine have data.
     d["margin_std"] = d[MARGINS].std(axis=1).where(enough) # take the standard deviation of the margins, but only where there are 3 or more years of data.
 
     d["sector_median"] = d.groupby("sector")["ev_ebitda"].transform("median")
@@ -205,12 +205,12 @@ def mini_lbo(row): # defines the mini lbo function - a simplified 5-year cash sw
         revenue = revenue * (1 + row["growth"]) # revenue growth modelled.
         ebitda = revenue * margin # ebitda grow at a rate equal to revenue growth.
         capex = revenue * capex_ratio # capex grows at same rate as revenue.
-        interest = A["rate"] * max(debt, 0) # interest paid on debt, but no debt to pay interest on when debt is below 0. Effectively a cash sweep.
+        interest = A["rate"] * max(debt, 0) # interest paid on debt, but no debt to pay interest on when debt is below 0. Interest stops once the debt is fully repaid.
         tax = max(0, A["tax"] * (ebitda - capex - interest)) # tax calculations.
         fcf = ebitda - capex - interest - tax # free cash flow calculations.
         if year == 1:
             fcf_to_debt = fcf / start_debt
-        debt = debt - fcf
+        debt = debt - fcf # cash sweep: all free cash flow repays debt.
 
     exit_equity = entry_mult * ebitda - debt # equity value at exit
     moic = exit_equity / equity # multiple on invested capital.
