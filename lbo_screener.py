@@ -175,7 +175,7 @@ def add_metrics(d): # defines and adds the following metrics for each company.
     d["cash_conv"] = (d["ebitda"] - d["capex"]) / d["ebitda"] # share of EBITDA left after capital expenditure - this is the cash that will repay LBO debt.
     d["net_lev"] = d["net_debt_xl"] / d["ebitda"]
 
-    enough = d[MARGINS].count(axis=1) >= 3 # enough is defined as true where at least 3 of the 5 yearly margine have data.
+    enough = d[MARGINS].count(axis=1) >= 3 # enough is defined as true where at least 3 of the 5 yearly margins have data.
     d["margin_std"] = d[MARGINS].std(axis=1).where(enough) # take the standard deviation of the margins, but only where there are 3 or more years of data.
 
     d["sector_median"] = d.groupby("sector")["ev_ebitda"].transform("median")
